@@ -1,0 +1,73 @@
+# Build artifacts
+*.exe
+*.lib
+*.obj
+*.pdb
+*.exp
+*.ilk
+*.log
+
+# IDE and editor files
+.vs/
+.vscode/
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# Temporary and backup files
+*.bak
+*~
+*.tmp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# backend
+# Node.js dependencies
+node_modules
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Audio files
+*.mp3
+*.m4a
+*.wav
+*.flac
+*.ogg
+
+build/

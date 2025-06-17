@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 3.16)
+project(AMP)
+
+# Option to enable cross-compilation
+option(CROSS_COMPILE_WINDOWS "Cross-compile for Windows using MinGW" OFF)
+
+# Set cross-compilation for Windows if enabled
+if(CROSS_COMPILE_WINDOWS)
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
+    set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+endif()
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Define VDJ_WIN for Windows build
+add_definitions(-DVDJ_WIN)
+
+# Create shared library (DLL)
+add_library(AMP SHARED
+    AMP.cpp
+    Main.cpp
+)
+
+# Set compiler flags based on compiler
+if(MSVC)
+    # Visual Studio flags
+    target_compile_options(AMP PRIVATE
+        /O2      # Optimization level 2
+        /W4      # Warning level 4
+    )
+else()
+    # GCC/MinGW flags
+    target_compile_options(AMP PRIVATE
+        -O2      # Optimization level 2
+        -Wall    # All warnings
+    )
+endif()
+
+# Windows-specific linking
+if(WIN32 OR CROSS_COMPILE_WINDOWS)
+    target_link_libraries(AMP PRIVATE
+        wininet
+    )
+    # MinGW-specific linking flags
+    if(MINGW OR CROSS_COMPILE_WINDOWS)
+        target_link_libraries(AMP PRIVATE
+            -static-libgcc
+            -static-libstdc++
+            -Wl,--add-stdcall-alias
+        )
+    endif()
+endif()
+
+# Set output name
+set_target_properties(AMP PROPERTIES
+    OUTPUT_NAME "AMP"
+    SUFFIX ".dll"
+) 
