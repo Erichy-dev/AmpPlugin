@@ -23,6 +23,20 @@ VirtualDJ plugin for streaming music from AMP backend.
 2. Browse music in "Music" folder
 3. Load tracks to decks
 
+## Highlighting Cached Tracks
+
+To make it easy to see which tracks are downloaded and available offline, you can set up a "Color Rule" in VirtualDJ. This is a one-time setup that will automatically color any track you've cached from AMP.
+
+1.  **Open Settings**: Click the **gear icon** (⚙️) in the top bar to open the VirtualDJ Settings.
+2.  **Go to Browser Settings**: On the left, select the **Browser** tab.
+3.  **Find Color Rules**: In the main panel, look for the **Color Rules** section and click on it.
+4.  **Create the New Rule**:
+    *   In the first box (the condition), type: `comment contains "(Cached)"`
+    *   In the second box (the color), select the color you want (e.g., **Green**).
+5.  **Save and Close**: Simply close the Settings window.
+
+From now on, any track from the AMP music pool that is cached to your computer will automatically appear in green (or your chosen color) in the browser list.
+
 ## Debug
 
 Plugin logs are written to:

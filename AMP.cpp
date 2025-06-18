@@ -161,6 +161,11 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             streamUrl = localPath.c_str();
         }
 
+        // Instead use an endpoint that'll call beets
+        // if (streamUrl) {
+        //     comment += " (Cached)";
+        // }
+
         tracksList->add(
             track.uniqueId.c_str(),   // uniqueId
             track.name.c_str(),       // title
@@ -168,7 +173,7 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             "",                       // remix
             nullptr,                  // genre
             "Music Pool",             // label
-            "Search result",          // comment
+            "",          // comment
             "",                       // cover URL
             streamUrl,                // streamUrl
             0,                        // length
@@ -419,6 +424,11 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 streamUrl = localPath.c_str();
             }
             
+            // Instead use an endpoint that'll call beets
+            // if (streamUrl) {
+            //     comment = "(Cached)";
+            // }
+            
             tracksList->add(
                 cleanPath.c_str(),        // uniqueId (cleanPath)
                 fileName.c_str(),         // title (fileName)
@@ -426,7 +436,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 "",                       // remix
                 nullptr,                  // genre
                 "Music Pool",             // label
-                "",                       // comment
+                "",          // comment
                 "",                       // cover URL
                 streamUrl,                // streamUrl
                 0,                        // length (determined when loaded)
@@ -549,9 +559,9 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
         std::thread([this, downloadUrl, filePath, apiKeyCopy, uniqueIdStr]() {
             if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
-                if (this->cb) {
-                    this->cb->SendCommand("browser_refresh");
-                }
+                // if (this->cb) {
+                //     this->cb->SendCommand("browser_refresh");
+                // }
             } else {
                 logDebug("Background download failed for uniqueId: " + uniqueIdStr);
                 remove(filePath.c_str());
