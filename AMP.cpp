@@ -156,15 +156,15 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
 
         const char* streamUrl = nullptr;
         string localPath;
+        string comment = "";
         if (isTrackCached(track.uniqueId.c_str())) {
             localPath = getEncodedLocalPathForTrack(track.uniqueId.c_str());
             streamUrl = localPath.c_str();
+            comment = "(Cached)";
+            logDebug("Track is cached. Returning local path");
+        }else {
+            logDebug("Track is not cached. Returning remote path");
         }
-
-        // Instead use an endpoint that'll call beets
-        // if (streamUrl) {
-        //     comment += " (Cached)";
-        // }
 
         tracksList->add(
             track.uniqueId.c_str(),   // uniqueId
@@ -173,7 +173,7 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             "",                       // remix
             nullptr,                  // genre
             "Music Pool",             // label
-            "",          // comment
+            comment.c_str(),          // comment
             "",                       // cover URL
             streamUrl,                // streamUrl
             0,                        // length
@@ -419,15 +419,15 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
         if (!fileName.empty() && !fullUrl.empty() && !cleanPath.empty()) {
             const char* streamUrl = nullptr;
             string localPath;
+            string comment = "";
             if (isTrackCached(cleanPath.c_str())) {
                 localPath = getEncodedLocalPathForTrack(cleanPath.c_str());
                 streamUrl = localPath.c_str();
+                comment = "(Cached)";
+                logDebug("Track is cached. Returning local path");
+            }else {
+                logDebug("Track is not cached. Returning remote path");
             }
-            
-            // Instead use an endpoint that'll call beets
-            // if (streamUrl) {
-            //     comment = "(Cached)";
-            // }
             
             tracksList->add(
                 cleanPath.c_str(),        // uniqueId (cleanPath)
@@ -436,7 +436,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 "",                       // remix
                 nullptr,                  // genre
                 "Music Pool",             // label
-                "",          // comment
+                comment.c_str(),          // comment
                 "",                       // cover URL
                 streamUrl,                // streamUrl
                 0,                        // length (determined when loaded)
@@ -559,9 +559,7 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
         std::thread([this, downloadUrl, filePath, apiKeyCopy, uniqueIdStr]() {
             if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
-                // if (this->cb) {
-                //     this->cb->SendCommand("browser_refresh");
-                // }
+                this->cb->SendCommand("browser_refresh");
             } else {
                 logDebug("Background download failed for uniqueId: " + uniqueIdStr);
                 remove(filePath.c_str());
