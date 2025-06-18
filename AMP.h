@@ -47,6 +47,7 @@ private:
     bool isTrackCached(const char* uniqueId);
     std::string getCacheDir();
     std::string getCachePathForTrack(const char* uniqueId);
+    std::string getEncodedLocalPathForTrack(const char* uniqueId);
 
     // HTTP and JSON parsing functions
     std::string httpGet(const std::string& url);

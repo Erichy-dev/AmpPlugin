@@ -40,8 +40,8 @@ struct IVdjTracksList
         float bpm = 0,
         int key = 0, // 1=Am, 2=A#m, ..., 24=G#
         int year = 0,
-        bool isVideo = 0,
-        bool isKaraoke = 0
+        bool isKaraoke = 0,
+        bool isVideo = 0
     ) = 0;
 
     // by default, OnSearch can be used as a synchronous blocking call.

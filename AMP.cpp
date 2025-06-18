@@ -154,6 +154,13 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             artist = "Unknown Artist";
         }
 
+        const char* streamUrl = nullptr;
+        string localPath;
+        if (isTrackCached(track.uniqueId.c_str())) {
+            localPath = getEncodedLocalPathForTrack(track.uniqueId.c_str());
+            streamUrl = localPath.c_str();
+        }
+
         tracksList->add(
             track.uniqueId.c_str(),   // uniqueId
             track.name.c_str(),       // title
@@ -163,7 +170,7 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             "Music Pool",             // label
             "Search result",          // comment
             "",                       // cover URL
-            nullptr,                  // streamUrl
+            streamUrl,                // streamUrl
             0,                        // length
             0,                        // bpm
             0,                        // key
@@ -192,15 +199,9 @@ HRESULT VDJ_API CAMP::GetStreamUrl(const char* uniqueId, IVdjString& url, IVdjSt
     
     // First, check if the track is cached locally
     if (isTrackCached(uniqueId)) {
-        string localPath = getCachePathForTrack(uniqueId);
-        size_t pos = 0;
-        while ((pos = localPath.find(" ", pos)) != string::npos) {
-            localPath.replace(pos, 1, "%20");
-            pos += 3;
-        }
+        string localPath = getEncodedLocalPathForTrack(uniqueId);
         logDebug("Track is cached. Returning local path: " + localPath);
-        // Prepend "file://" for local file access
-        url = ("file://" + localPath).c_str();
+        url = localPath.c_str();
         return S_OK;
     }
     
@@ -237,7 +238,7 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
     if (apiKey.empty()) {
         apiKey = getStoredApiKey();
     }
-    
+
     if (apiKey.empty()) {
         logDebug("User not logged in - no API key available. Please log in first.");
         return S_OK;
@@ -257,7 +258,7 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
         logDebug("'fields' not found in JSON response");
         return S_OK;
     }
-    
+
     size_t arrayStart = jsonResponse.find('[', fieldsPos);
     if (arrayStart == std::string::npos) {
         logDebug("Fields array start '[' not found");
@@ -271,7 +272,7 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
     while (pos < jsonResponse.length() && fieldCount < 1000) {
         size_t objStart = jsonResponse.find('{', pos);
         if (objStart == std::string::npos) break;
-        
+
         // Find the matching closing brace
         int braceCount = 1;
         size_t objEnd = objStart + 1;
@@ -281,11 +282,11 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
             objEnd++;
         }
         objEnd--; // Point to the closing brace
-        
+
         if (braceCount != 0) break; // Malformed JSON
-        
+
         std::string fieldObj = jsonResponse.substr(objStart, objEnd - objStart + 1);
-        
+
         // Extract field name
         size_t nameStart = fieldObj.find("\"name\":");
         if (nameStart != std::string::npos) {
@@ -293,7 +294,7 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
             size_t nameEnd = fieldObj.find('"', nameStart);
             if (nameEnd != std::string::npos) {
                 string fieldName = fieldObj.substr(nameStart, nameEnd - nameStart);
-                
+
                 // Extract path count for display
                 size_t pathCountStart = fieldObj.find("\"pathCount\":");
                 string displayName = fieldName;
@@ -305,12 +306,12 @@ HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
                         displayName = fieldName + " (" + pathCountStr + ")";
                     }
                 }
-                
+
                 subfoldersList->add(fieldName.c_str(), displayName.c_str());
                 fieldCount++;
             }
         }
-        
+
         pos = objEnd + 1;
     }
 
@@ -362,7 +363,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
     while (pos < jsonResponse.length() && trackCount < 1000) {
         size_t objStart = jsonResponse.find('{', pos);
         if (objStart == std::string::npos) break;
-        
+
         // Find the matching closing brace
         int braceCount = 1;
         size_t objEnd = objStart + 1;
@@ -372,13 +373,13 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
             objEnd++;
         }
         objEnd--; // Point to the closing brace
-        
+
         if (braceCount != 0) break; // Malformed JSON
-        
+
         std::string trackObj = jsonResponse.substr(objStart, objEnd - objStart + 1);
-        
+
         string fileName, fullUrl, cleanPath;
-        
+
         // Extract fileName
         size_t fileNameStart = trackObj.find("\"fileName\":");
         if (fileNameStart != std::string::npos) {
@@ -388,7 +389,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 fileName = trackObj.substr(fileNameStart, fileNameEnd - fileNameStart);
             }
         }
-        
+
         // Extract fullUrl
         size_t urlStart = trackObj.find("\"fullUrl\":");
         if (urlStart != std::string::npos) {
@@ -398,7 +399,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 fullUrl = trackObj.substr(urlStart, urlEnd - urlStart);
             }
         }
-        
+
         // Extract cleanPath for uniqueId
         size_t pathStart = trackObj.find("\"cleanPath\":");
         if (pathStart != std::string::npos) {
@@ -408,9 +409,16 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 cleanPath = trackObj.substr(pathStart, pathEnd - pathStart);
             }
         }
-        
+
         // Only add track if we have essential fields
         if (!fileName.empty() && !fullUrl.empty() && !cleanPath.empty()) {
+            const char* streamUrl = nullptr;
+            string localPath;
+            if (isTrackCached(cleanPath.c_str())) {
+                localPath = getEncodedLocalPathForTrack(cleanPath.c_str());
+                streamUrl = localPath.c_str();
+            }
+            
             tracksList->add(
                 cleanPath.c_str(),        // uniqueId (cleanPath)
                 fileName.c_str(),         // title (fileName)
@@ -420,7 +428,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 "Music Pool",             // label
                 "",                       // comment
                 "",                       // cover URL
-                nullptr,                  // streamUrl
+                streamUrl,                // streamUrl
                 0,                        // length (determined when loaded)
                 0,                        // bpm
                 0,                        // key
@@ -430,7 +438,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
             );
             trackCount++;
         }
-        
+
         pos = objEnd + 1;
     }
     
@@ -541,6 +549,9 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
         std::thread([this, downloadUrl, filePath, apiKeyCopy, uniqueIdStr]() {
             if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
+                if (this->cb) {
+                    this->cb->SendCommand("browser_refresh");
+                }
             } else {
                 logDebug("Background download failed for uniqueId: " + uniqueIdStr);
                 remove(filePath.c_str());
@@ -640,6 +651,34 @@ std::string CAMP::getCachePathForTrack(const char* uniqueId)
 #else
     return cacheDir + "/" + safeFileName;
 #endif
+}
+
+std::string CAMP::getEncodedLocalPathForTrack(const char* uniqueId)
+{
+    string path = getCachePathForTrack(uniqueId);
+    if (path.empty()) {
+        return "";
+    }
+
+    // URL encode the path, especially for spaces.
+    string encodedPath;
+    encodedPath.reserve(path.size() * 3);
+    for (char c : path) {
+        if (c == ' ') {
+            encodedPath += "%20";
+        } else if (c == '/') {
+            encodedPath += "/";
+        } else if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            encodedPath += c;
+        }
+        else {
+            char buf[4];
+            sprintf(buf, "%%%02X", (unsigned char)c);
+            encodedPath += buf;
+        }
+    }
+    
+    return "file://" + encodedPath;
 }
 
 // Caching helper method

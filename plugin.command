@@ -54,9 +54,9 @@ echo "==> Building plugin with make..."
 make
 
 # Remove the existing AMP.bundle if it exists in the destination
-if [ -d "../$PLUGIN_BUNDLE" ]; then
+if [ -d "../../$PLUGIN_BUNDLE" ]; then
     echo "==> Removing existing $PLUGIN_BUNDLE from destination..."
-    rm -rf "../$PLUGIN_BUNDLE"
+    rm -rf "../../$PLUGIN_BUNDLE"
 fi
 
 # Move the compiled plugin bundle to the main plugins directory.
@@ -77,3 +77,7 @@ echo "✅  AMP PLUGIN INSTALLED SUCCESSFULLY!  ✅"
 echo "   Please close the terminal & restart VirtualDJ"
 echo "************************************************************"
 echo "\n"
+
+sleep 2  # Give user time to read the success message
+osascript -e 'tell application "Terminal" to quit' &
+exit 0
