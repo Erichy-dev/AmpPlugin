@@ -156,11 +156,9 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
 
         const char* streamUrl = nullptr;
         string localPath;
-        string comment = "";
         if (isTrackCached(track.uniqueId.c_str())) {
             localPath = getEncodedLocalPathForTrack(track.uniqueId.c_str());
             streamUrl = localPath.c_str();
-            comment = "(Cached)";
             logDebug("Track is cached. Returning local path");
         }else {
             logDebug("Track is not cached. Returning remote path");
@@ -173,7 +171,7 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             "",                       // remix
             nullptr,                  // genre
             "Music Pool",             // label
-            comment.c_str(),          // comment
+            "",          // comment
             "",                       // cover URL
             streamUrl,                // streamUrl
             0,                        // length
@@ -419,11 +417,9 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
         if (!fileName.empty() && !fullUrl.empty() && !cleanPath.empty()) {
             const char* streamUrl = nullptr;
             string localPath;
-            string comment = "";
             if (isTrackCached(cleanPath.c_str())) {
                 localPath = getEncodedLocalPathForTrack(cleanPath.c_str());
                 streamUrl = localPath.c_str();
-                comment = "(Cached)";
                 logDebug("Track is cached. Returning local path");
             }else {
                 logDebug("Track is not cached. Returning remote path");
@@ -436,7 +432,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 "",                       // remix
                 nullptr,                  // genre
                 "Music Pool",             // label
-                comment.c_str(),          // comment
+                "",          // comment
                 "",                       // cover URL
                 streamUrl,                // streamUrl
                 0,                        // length (determined when loaded)
@@ -482,6 +478,7 @@ HRESULT VDJ_API CAMP::OnContextMenu(const char* uniqueId, size_t menuIndex)
             deleteTrackFromCache(uniqueId);
         } else {
             logDebug("'Download to Cache' selected for: " + id);
+            cb->SendCommand("browsed_file_color \"#85e692\"");
             downloadTrackToCache(uniqueId);
         }
     }
@@ -559,7 +556,7 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
         std::thread([this, downloadUrl, filePath, apiKeyCopy, uniqueIdStr]() {
             if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
-                this->cb->SendCommand("browser_refresh");
+                cb->SendCommand("browsed_file_color \"#00FF00\"");
             } else {
                 logDebug("Background download failed for uniqueId: " + uniqueIdStr);
                 remove(filePath.c_str());
@@ -581,6 +578,7 @@ void CAMP::deleteTrackFromCache(const char* uniqueId)
         if (!filePath.empty()) {
             if (remove(filePath.c_str()) == 0) {
                 logDebug("Successfully deleted cached track: " + filePath);
+                cb->SendCommand("browsed_file_color \"#D8D8D8\"");
             } else {
                 logDebug("Error deleting cached track: " + filePath);
             }
@@ -647,9 +645,10 @@ std::string CAMP::getCachePathForTrack(const char* uniqueId)
     }
 
     string safeFileName = uniqueId;
-    // Replace all slashes with underscore for a flat cache structure.
+    // Replace problematic characters for a safe file name
     for (char &c : safeFileName) {
-        if (c == '/' || c == '\\') {
+        if (c == '/' || c == '\\' || c == '$' || c == '?' || c == '*' || c == ':' || 
+            c == '|' || c == '<' || c == '>' || c == '"' || c == '&' || c == '%') {
             c = '_';
         }
     }
