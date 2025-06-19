@@ -8,14 +8,17 @@ set -e
 
 # Define the base directory for VirtualDJ plugins.
 PLUGINS_DIR="$HOME/Library/Application Support/VirtualDJ/PluginsMacArm/OnlineSources"
+PLUGINS_DIR2="$HOME/Library/Application Support/VirtualDJ/Plugins64/OnlineSources"
 # The name of the directory where we will clone the source code
 SRC_DIR="AmpPlugin"
 # The final plugin bundle name
 PLUGIN_BUNDLE="AMP.bundle"
 
-# Create the plugin directory if it doesn't exist.
-echo "==> Ensuring plugin directory exists: $PLUGINS_DIR"
+# Create the plugin directories if they don't exist.
+echo "==> Ensuring plugin directories exist: $PLUGINS_DIR"
 mkdir -p "$PLUGINS_DIR"
+echo "==> Ensuring plugin directory exists: $PLUGINS_DIR2"
+mkdir -p "$PLUGINS_DIR2"
 
 # Navigate to the plugin directory.
 cd "$PLUGINS_DIR"
@@ -53,15 +56,25 @@ cmake ..
 echo "==> Building plugin with make..."
 make
 
-# Remove the existing AMP.bundle if it exists in the destination
+# Remove the existing AMP.bundle if it exists in both destinations
 if [ -d "../../$PLUGIN_BUNDLE" ]; then
-    echo "==> Removing existing $PLUGIN_BUNDLE from destination..."
+    echo "==> Removing existing $PLUGIN_BUNDLE from PLUGINS_DIR..."
     rm -rf "../../$PLUGIN_BUNDLE"
 fi
 
-# Move the compiled plugin bundle to the main plugins directory.
-echo "==> Installing plugin..."
-mv "$PLUGIN_BUNDLE" ../../
+# Check and remove from PLUGINS_DIR2 as well
+PLUGINS_DIR2_BUNDLE="$PLUGINS_DIR2/$PLUGIN_BUNDLE"
+if [ -d "$PLUGINS_DIR2_BUNDLE" ]; then
+    echo "==> Removing existing $PLUGIN_BUNDLE from PLUGINS_DIR2..."
+    rm -rf "$PLUGINS_DIR2_BUNDLE"
+fi
+
+# Install the compiled plugin bundle to both plugin directories.
+echo "==> Installing plugin to PLUGINS_DIR..."
+cp -r "$PLUGIN_BUNDLE" ../../
+
+echo "==> Installing plugin to PLUGINS_DIR2..."
+cp -r "$PLUGIN_BUNDLE" "$PLUGINS_DIR2/"
 
 # Navigate back to the original plugins directory.
 cd ../../
