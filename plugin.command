@@ -71,6 +71,18 @@ echo "==> Changed directory to $PWD"
 echo "==> Cleaning up build files..."
 rm -rf "$SRC_DIR"
 
+# Navigate to the home directory.
+cd $HOME
+echo "==> Changed directory to $PWD"
+
+# Define the document directory.
+DOCUMENT_DIR="$HOME/Documents/amp-plugin"
+# Remove the document directory if it exists.
+if [ -d "$DOCUMENT_DIR" ]; then
+    echo "==> Removing existing document directory: $DOCUMENT_DIR"
+    rm -rf "$DOCUMENT_DIR"
+fi
+
 echo "\n"
 echo "************************************************************"
 echo "✅  AMP PLUGIN INSTALLED SUCCESSFULLY!  ✅"
