@@ -52,3 +52,6 @@ Plugin logs are written to:
 # build plgin build/
 rm -rf * && cmake .. && make
 ```
+
+**To get the up-to-date commands open options-controllers-keyboard**
+
