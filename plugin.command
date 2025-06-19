@@ -79,5 +79,6 @@ echo "************************************************************"
 echo "\n"
 
 sleep 2  # Give user time to read the success message
-osascript -e 'tell application "Terminal" to quit' &
+osascript -e 'tell application "Terminal" to close front window' &
+disown
 exit 0
