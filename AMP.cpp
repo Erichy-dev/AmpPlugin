@@ -164,6 +164,12 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             logDebug("Track is not cached. Returning remote path");
         }
 
+        // check whether the track is a video (mp3 vs mp4)
+        bool isVideo = false;
+        if (track.name.find(".mp4") != string::npos) {
+            isVideo = true;
+        }
+
         tracksList->add(
             track.uniqueId.c_str(),   // uniqueId
             track.name.c_str(),       // title
@@ -178,7 +184,7 @@ HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
             0,                        // bpm
             0,                        // key
             0,                        // year
-            false,                    // isVideo
+            isVideo,                    // isVideo
             false                     // isKaraoke
         );
     }
@@ -424,6 +430,12 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
             }else {
                 logDebug("Track is not cached. Returning remote path");
             }
+
+            // check whether the track is a video (mp3 vs mp4)
+            bool isVideo = false;
+            if (fileName.find(".mp4") != string::npos) {
+                isVideo = true;
+            }
             
             tracksList->add(
                 cleanPath.c_str(),        // uniqueId (cleanPath)
@@ -439,7 +451,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 0,                        // bpm
                 0,                        // key
                 0,                        // year
-                false,                    // isVideo
+                isVideo,                    // isVideo
                 false                     // isKaraoke
             );
             trackCount++;
