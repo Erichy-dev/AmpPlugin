@@ -52,6 +52,7 @@ private:
     // HTTP and JSON parsing functions
     std::string httpGet(const std::string& url);
     std::string httpGetWithAuth(const std::string& url);
+    void httpPost(const std::string& url, const std::string& postData);
     bool downloadFile(const std::string& url, const std::string& filePath, const std::string& apiKey);
     std::vector<TrackInfo> parseTracksFromJson(const std::string& jsonString);
     std::string urlEncode(const std::string& value);

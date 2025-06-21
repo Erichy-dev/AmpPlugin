@@ -204,6 +204,14 @@ HRESULT VDJ_API CAMP::OnSearchCancel()
 HRESULT VDJ_API CAMP::GetStreamUrl(const char* uniqueId, IVdjString& url, IVdjString& errorMessage)
 {
     string id = uniqueId ? uniqueId : "(null)";
+    
+    // Call onstream endpoint in a separate thread to avoid blocking
+    thread([this, id]() {
+        string onstreamUrl = "https://music.abelldjcompany.com/api/fields/most-played/tracks";
+        string postData = "{\"cleanPath\": \"" + id + "\"}";
+        httpPost(onstreamUrl, postData);
+    }).detach();
+
     logDebug("GetStreamUrl called with uniqueId: '" + id + "'");
     
     // First, check if the track is cached locally
@@ -343,7 +351,8 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
     }
 
     // Fetch tracks for specific field from new API endpoint
-    string apiUrl = "https://music.abelldjcompany.com/api/fields/" + folderId + "/tracks";
+    string encodedFolderId = urlEncode(folderId);
+    string apiUrl = "https://music.abelldjcompany.com/api/fields/" + encodedFolderId + "/tracks";
     logDebug("Fetching tracks from: " + apiUrl);
     string jsonResponse = httpGetWithAuth(apiUrl);
     if (jsonResponse.empty()) {
@@ -953,6 +962,90 @@ std::string CAMP::httpGetWithAuth(const std::string& url)
     
     logDebug("httpGetWithAuth completed, response length: " + to_string(response.length()));
     return response;
+}
+
+void CAMP::httpPost(const std::string& url, const std::string& postData)
+{
+    logDebug("httpPost called with URL: " + url + " and data: " + postData);
+
+    if (apiKey.empty()) {
+        apiKey = getStoredApiKey();
+    }
+    
+    if (apiKey.empty()) {
+        logDebug("httpPost: No API key available");
+        return;
+    }
+
+#ifdef VDJ_MAC
+    // Using curl for POST request on macOS
+    string command = "curl -s -X POST -H \"Content-Type: application/json\" -H \"x-api-key: " + apiKey + "\" -d '" + postData + "' \"" + url + "\"";
+    
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        logDebug("httpPost: failed to execute curl command.");
+        return;
+    }
+    
+    char buffer[128];
+    string result = "";
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        result += buffer;
+    }
+    
+    pclose(pipe);
+    logDebug("httpPost response: " + result);
+#elif defined(VDJ_WIN)
+    // Using WinINet for POST request on Windows
+    HINTERNET hInternet = InternetOpenA("VDJ Plugin", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+    if (!hInternet) {
+        logDebug("httpPost: InternetOpenA failed.");
+        return;
+    }
+
+    URL_COMPONENTS urlComp;
+    char szHostName[256];
+    char szUrlPath[2048];
+
+    memset(&urlComp, 0, sizeof(urlComp));
+    urlComp.dwStructSize = sizeof(urlComp);
+    urlComp.lpszHostName = szHostName;
+    urlComp.dwHostNameLength = sizeof(szHostName);
+    urlComp.lpszUrlPath = szUrlPath;
+    urlComp.dwUrlPathLength = sizeof(szUrlPath);
+    
+    if (!InternetCrackUrlA(url.c_str(), url.length(), 0, &urlComp)) {
+        logDebug("httpPost: InternetCrackUrlA failed.");
+        InternetCloseHandle(hInternet);
+        return;
+    }
+
+    HINTERNET hConnect = InternetConnectA(hInternet, urlComp.lpszHostName, urlComp.nPort, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
+    if (!hConnect) {
+        logDebug("httpPost: InternetConnectA failed.");
+        InternetCloseHandle(hInternet);
+        return;
+    }
+
+    const char* acceptTypes[] = {"application/json", NULL};
+    HINTERNET hRequest = HttpOpenRequestA(hConnect, "POST", urlComp.lpszUrlPath, NULL, NULL, acceptTypes, (urlComp.nScheme == INTERNET_SCHEME_HTTPS) ? INTERNET_FLAG_SECURE : 0, 0);
+    if (!hRequest) {
+        logDebug("httpPost: HttpOpenRequestA failed.");
+        InternetCloseHandle(hConnect);
+        InternetCloseHandle(hInternet);
+        return;
+    }
+
+    string headers = "Content-Type: application/json\r\nx-api-key: " + apiKey;
+    if (!HttpSendRequestA(hRequest, headers.c_str(), headers.length(), (LPVOID)postData.c_str(), postData.length())) {
+         DWORD dwError = GetLastError();
+        logDebug("httpPost: HttpSendRequestA failed. Error: " + std::to_string(dwError));
+    }
+    
+    InternetCloseHandle(hRequest);
+    InternetCloseHandle(hConnect);
+    InternetCloseHandle(hInternet);
+#endif
 }
 
 bool CAMP::validateApiKey(const std::string& key)
