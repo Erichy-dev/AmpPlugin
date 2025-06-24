@@ -51,7 +51,6 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         if (plugin->isTrackCached(track.uniqueId.c_str())) {
             localPath = plugin->getEncodedLocalPathForTrack(track.uniqueId.c_str());
             streamUrl = localPath.c_str();
-            plugin->cb->SendCommand("browsed_file_color \"#00FF00\"");
             logDebug("Track is cached. Returning local path");
         } else {
             logDebug("Track is not cached. Returning remote path");
