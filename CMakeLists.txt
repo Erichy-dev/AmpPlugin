@@ -15,6 +15,7 @@ add_library(AMP MODULE
     plugin/getFolderList.cpp
     plugin/getFolder.cpp
     plugin/cache.cpp
+    plugin/internet.cpp
 )
 
 set_target_properties(AMP PROPERTIES
