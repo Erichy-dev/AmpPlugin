@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "vdjOnlineSource.h"
+#include "plugin/search.h"
 
 // Simple structure to hold track information
 struct TrackInfo {
@@ -19,9 +20,15 @@ struct TrackInfo {
     int size;
 };
 
+// Forward declare the search function so we can friend it.
+HRESULT search(class CAMP* plugin, const char* searchTerm, class IVdjTracksList* tracks);
+
 class CAMP : public IVdjPluginOnlineSource
 {
 public:
+    // Friend declaration for our search function
+    friend HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks);
+
     HRESULT VDJ_API OnGetPluginInfo(TVdjPluginInfo8* infos) override;
     
     // Login methods

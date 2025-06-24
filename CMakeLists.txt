@@ -5,7 +5,13 @@ project(AMP)
 set(CMAKE_CXX_STANDARD 17)
 
 # Create bundle (MODULE creates .bundle, not .dylib)
-add_library(AMP MODULE AMP.cpp Main.cpp)
+add_library(AMP MODULE 
+    AMP.cpp 
+    Main.cpp
+    plugin/user.cpp
+    plugin/utilities.cpp
+    plugin/search.cpp
+)
 
 set_target_properties(AMP PROPERTIES
     BUNDLE TRUE

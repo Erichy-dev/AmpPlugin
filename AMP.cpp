@@ -1,6 +1,8 @@
 #include "AMP.h"
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
+#include "plugin/search.h"
+#include "plugin/utilities.h"
 #include <string>
 #include <algorithm>
 #include <sstream>
@@ -26,38 +28,6 @@
 
 using namespace std;
 
-// Debug logging function
-void logDebug(const string& message) {
-    string logPath;
-#ifdef VDJ_WIN
-    char* userProfile = getenv("USERPROFILE");
-    if (userProfile) {
-        logPath = string(userProfile) + "\\AppData\\Local\\VirtualDJ\\debug.log";
-    } else {
-        logPath = "C:\\temp\\amp_debug.log"; // fallback
-    }
-#else
-    char* homeDir = getenv("HOME");
-    if (homeDir) {
-        logPath = string(homeDir) + "/Library/Application Support/VirtualDJ/debug.log";
-    } else {
-        logPath = "/tmp/amp_debug.log"; // fallback
-    }
-#endif
-    
-    ofstream logFile(logPath, ios::app);
-    if (logFile.is_open()) {
-        time_t now = time(0);
-        char* timeStr = ctime(&now);
-        // Remove newline from ctime
-        if (timeStr && strlen(timeStr) > 0) {
-            timeStr[strlen(timeStr) - 1] = '\0';
-        }
-        logFile << "[" << timeStr << "] " << message << endl;
-        logFile.close();
-    }
-}
-
 HRESULT VDJ_API CAMP::OnGetPluginInfo(TVdjPluginInfo8* infos)
 {
     logDebug("OnGetPluginInfo called");
@@ -71,126 +41,9 @@ HRESULT VDJ_API CAMP::OnGetPluginInfo(TVdjPluginInfo8* infos)
     return S_OK;
 }
 
-// Login implementation
-HRESULT VDJ_API CAMP::IsLogged()
-{
-    logDebug("IsLogged called");
-    apiKey = getStoredApiKey();
-    bool logged = !apiKey.empty();
-    logDebug("IsLogged result: " + string(logged ? "true" : "false"));
-    return logged ? S_OK : S_FALSE;
-}
-
-HRESULT VDJ_API CAMP::OnLogin()
-{
-    logDebug("OnLogin called");
-    
-    // For now, use the default API key for testing
-    // In production, you'd prompt the user for their API key
-    string testKey = "amp-default-key-123";
-    
-    if (validateApiKey(testKey)) {
-        storeApiKey(testKey);
-        apiKey = testKey;
-        logDebug("Login successful with test API key");
-        return S_OK;
-    }
-    
-    logDebug("Login failed - invalid API key");
-    return S_FALSE;
-}
-
-HRESULT VDJ_API CAMP::OnLogout()
-{
-    logDebug("OnLogout called");
-    clearApiKey();
-    apiKey.clear();
-    tracksCached = false;
-    cachedTracks.clear();
-    logDebug("Logout completed");
-    return S_OK;
-}
-
 HRESULT VDJ_API CAMP::OnSearch(const char* search, IVdjTracksList* tracksList)
 {
-    logDebug("OnSearch called with search term: " + string(search ? search : "(null)"));
-
-    if (!search || strlen(search) == 0) {
-        logDebug("Empty search term, returning empty results");
-        return S_OK;
-    }
-
-    if (apiKey.empty()) {
-        apiKey = getStoredApiKey();
-    }
-    if (apiKey.empty()) {
-        logDebug("User not logged in - no API key available for search.");
-        return S_OK;
-    }
-
-    string encodedSearch = urlEncode(search);
-    string searchUrl = "https://music.abelldjcompany.com/api/search?q=" + encodedSearch;
-
-    logDebug("Performing search with URL: " + searchUrl);
-
-    string jsonResponse = httpGetWithAuth(searchUrl);
-    if (jsonResponse.empty()) {
-        logDebug("Empty JSON response from search API");
-        return S_OK;
-    }
-
-    // Parse tracks from JSON response
-    logDebug("Parsing search results from JSON response");
-    vector<TrackInfo> searchResults = parseTracksFromJson(jsonResponse);
-    if (searchResults.empty()) {
-        logDebug("No tracks found from search API.");
-        return S_OK;
-    }
-
-    logDebug("Adding " + to_string(searchResults.size()) + " search results");
-    for (const auto& track : searchResults) {
-        string artist = track.directory;
-        if (artist.empty() || artist == "/") {
-            artist = "Unknown Artist";
-        }
-
-        const char* streamUrl = nullptr;
-        string localPath;
-        if (isTrackCached(track.uniqueId.c_str())) {
-            localPath = getEncodedLocalPathForTrack(track.uniqueId.c_str());
-            streamUrl = localPath.c_str();
-            logDebug("Track is cached. Returning local path");
-        }else {
-            logDebug("Track is not cached. Returning remote path");
-        }
-
-        // check whether the track is a video (mp3 vs mp4)
-        bool isVideo = false;
-        if (track.name.find(".mp4") != string::npos) {
-            isVideo = true;
-        }
-
-        tracksList->add(
-            track.uniqueId.c_str(),   // uniqueId
-            track.name.c_str(),       // title
-            artist.c_str(),           // artist
-            "",                       // remix
-            nullptr,                  // genre
-            "Music Pool",             // label
-            "",          // comment
-            "",                       // cover URL
-            streamUrl,                // streamUrl
-            0,                        // length
-            0,                        // bpm
-            0,                        // key
-            0,                        // year
-            isVideo,                    // isVideo
-            false                     // isKaraoke
-        );
-    }
-
-    logDebug("OnSearch completed with " + to_string(searchResults.size()) + " results");
-    return S_OK;
+    return ::search(this, search, tracksList);
 }
 
 HRESULT VDJ_API CAMP::OnSearchCancel()
@@ -436,6 +289,7 @@ HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* trac
                 localPath = getEncodedLocalPathForTrack(cleanPath.c_str());
                 streamUrl = localPath.c_str();
                 logDebug("Track is cached. Returning local path");
+                cb->SendCommand("browsed_file_color \"#00FF00\"");
             }else {
                 logDebug("Track is not cached. Returning remote path");
             }
@@ -578,8 +432,6 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
             if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
                 cb->SendCommand("browsed_file_color \"#00FF00\"");
-                cb->SendCommand(("set_downloaded_state \"" + uniqueIdStr + "\" cached").c_str());
-                cb->SendCommand("browser_reload");
             } else {
                 logDebug("Background download failed for uniqueId: " + uniqueIdStr);
                 remove(filePath.c_str());
