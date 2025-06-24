@@ -13,6 +13,7 @@ add_library(AMP MODULE
     plugin/search.cpp
     plugin/streamUrl.cpp
     plugin/getFolderList.cpp
+    plugin/getFolder.cpp
 )
 
 set_target_properties(AMP PROPERTIES
