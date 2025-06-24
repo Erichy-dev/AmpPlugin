@@ -11,6 +11,7 @@
 #include "vdjOnlineSource.h"
 #include "plugin/search.h"
 #include "plugin/streamUrl.h"
+#include "plugin/getFolderList.h"
 
 // Simple structure to hold track information
 struct TrackInfo {
@@ -24,6 +25,7 @@ struct TrackInfo {
 // Forward declare the search function so we can friend it.
 HRESULT search(class CAMP* plugin, const char* searchTerm, class IVdjTracksList* tracks);
 HRESULT getStreamUrl(class CAMP* plugin, const char* uniqueId, class IVdjString& url, class IVdjString& errorMessage);
+HRESULT getFolderList(class CAMP* plugin, class IVdjSubfoldersList* subfoldersList);
 
 class CAMP : public IVdjPluginOnlineSource
 {
@@ -31,6 +33,7 @@ public:
     // Friend declaration for our search function
     friend HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks);
     friend HRESULT getStreamUrl(CAMP* plugin, const char* uniqueId, IVdjString& url, IVdjString& errorMessage);
+    friend HRESULT getFolderList(CAMP* plugin, IVdjSubfoldersList* subfoldersList);
 
     HRESULT VDJ_API OnGetPluginInfo(TVdjPluginInfo8* infos) override;
     
