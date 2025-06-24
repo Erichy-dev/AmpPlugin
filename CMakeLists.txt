@@ -14,6 +14,7 @@ add_library(AMP MODULE
     plugin/streamUrl.cpp
     plugin/getFolderList.cpp
     plugin/getFolder.cpp
+    plugin/cache.cpp
 )
 
 set_target_properties(AMP PROPERTIES
