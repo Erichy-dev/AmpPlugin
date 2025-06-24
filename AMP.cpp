@@ -56,48 +56,7 @@ HRESULT VDJ_API CAMP::OnSearchCancel()
 
 HRESULT VDJ_API CAMP::GetStreamUrl(const char* uniqueId, IVdjString& url, IVdjString& errorMessage)
 {
-    string id = uniqueId ? uniqueId : "(null)";
-    
-    // Call onstream endpoint in a separate thread to avoid blocking
-    thread([this, id]() {
-        string onstreamUrl = "https://music.abelldjcompany.com/api/fields/most-played/tracks";
-        string postData = "{\"cleanPath\": \"" + id + "\"}";
-        httpPost(onstreamUrl, postData);
-    }).detach();
-
-    logDebug("GetStreamUrl called with uniqueId: '" + id + "'");
-    
-    // First, check if the track is cached locally
-    if (isTrackCached(uniqueId)) {
-        string localPath = getEncodedLocalPathForTrack(uniqueId);
-        logDebug("Track is cached. Returning local path: " + localPath);
-        url = localPath.c_str();
-        return S_OK;
-    }
-    
-    // If not cached, look for the track in our full track list to get the remote URL
-    logDebug("Track not cached. Searching in memory...");
-    ensureTracksAreCached();
-    for (const auto& track : cachedTracks) {
-        if (track.uniqueId == id) {
-            logDebug("Found track in memory: " + track.url);
-            url = track.url.c_str();
-            return S_OK;
-        }
-    }
-    
-    // If not found in cache or memory, construct URL directly as a fallback with proper URL encoding
-    if (!id.empty() && id != "fallback") {
-        string encodedPath = urlEncode(id);
-        string streamUrl = "https://music.abelldjcompany.com/audio/" + encodedPath;
-        logDebug("Constructed fallback stream URL: " + streamUrl);
-        url = streamUrl.c_str();
-        return S_OK;
-    }
-    
-    logDebug("Track not found, returning error");
-    errorMessage = "Track not found";
-    return S_FALSE;
+    return ::getStreamUrl(this, uniqueId, url, errorMessage);
 }
 
 HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)

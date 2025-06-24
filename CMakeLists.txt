@@ -11,6 +11,7 @@ add_library(AMP MODULE
     plugin/user.cpp
     plugin/utilities.cpp
     plugin/search.cpp
+    plugin/streamUrl.cpp
 )
 
 set_target_properties(AMP PROPERTIES
