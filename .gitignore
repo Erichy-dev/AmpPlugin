@@ -71,3 +71,4 @@ pids
 *.ogg
 
 build/
+.cache/
