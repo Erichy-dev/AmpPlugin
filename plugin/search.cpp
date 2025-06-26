@@ -74,6 +74,33 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         // Read streaming results
         beast::flat_buffer buffer;
         std::vector<TrackInfo> allResults;
+        std::vector<TrackInfo> batch;
+        const size_t BATCH_SIZE = 25;
+
+        auto addBatchToVdj = [&](const std::vector<TrackInfo>& tracksToAdd) {
+            logDebug("Adding batch of " + std::to_string(tracksToAdd.size()) + " tracks to VirtualDJ.");
+            for (const auto& track : tracksToAdd) {
+                std::string artist = track.directory;
+                if (artist.empty() || artist == "/") {
+                    artist = "Unknown Artist";
+                }
+
+                const char* streamUrl = nullptr;
+                std::string localPath;
+                if (plugin->isTrackCached(track.uniqueId.c_str())) {
+                    localPath = plugin->getEncodedLocalPathForTrack(track.uniqueId.c_str());
+                    streamUrl = localPath.c_str();
+                }
+
+                bool isVideo = track.name.find(".mp4") != std::string::npos;
+
+                tracks->add(
+                    track.uniqueId.c_str(), track.name.c_str(), artist.c_str(),
+                    "", nullptr, "Music Pool", "", "", streamUrl,
+                    0, 0, 0, 0, isVideo, false
+                );
+            }
+        };
         
         while (true) {
             try {
@@ -135,7 +162,13 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
                     // Only add track if we have essential fields
                     if (!track.name.empty() && !track.uniqueId.empty() && !track.url.empty()) {
                         allResults.push_back(track);
-                        logDebug("Added track: " + track.name + " from " + track.directory);
+                        batch.push_back(track);
+                        logDebug("Batched track: " + track.name);
+
+                        if (batch.size() >= BATCH_SIZE) {
+                            addBatchToVdj(batch);
+                            batch.clear();
+                        }
                     } else {
                         logDebug("Skipping incomplete track data");
                     }
@@ -149,59 +182,16 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
             }
         }
 
+        // Add any remaining tracks in the last batch
+        if (!batch.empty()) {
+            addBatchToVdj(batch);
+            batch.clear();
+        }
+
         // Close connection
         ws.close(websocket::close_code::normal);
         
         logDebug("WebSocket connection closed. Total results: " + std::to_string(allResults.size()));
-
-        // Process all collected results
-        if (allResults.empty()) {
-            logDebug("No tracks found from WebSocket search.");
-            return S_OK;
-        }
-
-        logDebug("Adding " + std::to_string(allResults.size()) + " search results");
-        for (const auto& track : allResults) {
-            std::string artist = track.directory;
-            if (artist.empty() || artist == "/") {
-                artist = "Unknown Artist";
-            }
-
-            const char* streamUrl = nullptr;
-            std::string localPath;
-            if (plugin->isTrackCached(track.uniqueId.c_str())) {
-                localPath = plugin->getEncodedLocalPathForTrack(track.uniqueId.c_str());
-                streamUrl = localPath.c_str();
-                logDebug("Track is cached. Returning local path");
-            } else {
-                logDebug("Track is not cached. Returning remote path");
-            }
-
-            // check whether the track is a video (mp3 vs mp4)
-            bool isVideo = false;
-            if (track.name.find(".mp4") != std::string::npos) {
-                isVideo = true;
-            }
-
-            tracks->add(
-                track.uniqueId.c_str(),   // uniqueId
-                track.name.c_str(),       // title
-                artist.c_str(),           // artist
-                "",                       // remix
-                nullptr,                  // genre
-                "Music Pool",             // label
-                "",                       // comment
-                "",                       // cover URL
-                streamUrl,                // streamUrl
-                0,                        // length
-                0,                        // bpm
-                0,                        // key
-                0,                        // year
-                isVideo,                  // isVideo
-                false                     // isKaraoke
-            );
-        }
-
         logDebug("OnSearch completed with " + std::to_string(allResults.size()) + " results");
         return S_OK;
 
