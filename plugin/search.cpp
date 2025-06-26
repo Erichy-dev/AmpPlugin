@@ -89,16 +89,59 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
                     break;
                 }
                 
-                // Parse tracks from this chunk of the response
-                std::vector<TrackInfo> chunkResults = plugin->parseTracksFromJson(response);
-                
-                // Add to our total results
-                allResults.insert(allResults.end(), chunkResults.begin(), chunkResults.end());
-                
-                // Optionally, you could add tracks immediately as they arrive:
-                // for (const auto& track : chunkResults) {
-                //     // Add track processing code here if you want real-time updates
-                // }
+                // Check if this is a track message
+                if (response.find("\"type\":\"track\"") != std::string::npos) {
+                    // Parse individual track from the new WebSocket format
+                    TrackInfo track;
+                    track.size = 0;
+                    
+                    // Extract fileName from data.fileName
+                    size_t fileNameStart = response.find("\"fileName\":");
+                    if (fileNameStart != std::string::npos) {
+                        fileNameStart = response.find('"', fileNameStart + 11) + 1;
+                        size_t fileNameEnd = response.find('"', fileNameStart);
+                        if (fileNameEnd != std::string::npos) {
+                            track.name = response.substr(fileNameStart, fileNameEnd - fileNameStart);
+                        }
+                    }
+                    
+                    // Extract cleanPath for uniqueId from data.cleanPath
+                    size_t pathStart = response.find("\"cleanPath\":");
+                    if (pathStart != std::string::npos) {
+                        pathStart = response.find('"', pathStart + 12) + 1;
+                        size_t pathEnd = response.find('"', pathStart);
+                        if (pathEnd != std::string::npos) {
+                            track.uniqueId = response.substr(pathStart, pathEnd - pathStart);
+                            // Use the directory part of cleanPath as directory
+                            size_t lastSlash = track.uniqueId.find_last_of('/');
+                            if (lastSlash != std::string::npos && lastSlash > 0) {
+                                track.directory = track.uniqueId.substr(0, lastSlash);
+                            } else {
+                                track.directory = "Unknown";
+                            }
+                        }
+                    }
+                    
+                    // Extract fullUrl from data.fullUrl
+                    size_t urlStart = response.find("\"fullUrl\":");
+                    if (urlStart != std::string::npos) {
+                        urlStart = response.find('"', urlStart + 10) + 1;
+                        size_t urlEnd = response.find('"', urlStart);
+                        if (urlEnd != std::string::npos) {
+                            track.url = response.substr(urlStart, urlEnd - urlStart);
+                        }
+                    }
+                    
+                    // Only add track if we have essential fields
+                    if (!track.name.empty() && !track.uniqueId.empty() && !track.url.empty()) {
+                        allResults.push_back(track);
+                        logDebug("Added track: " + track.name + " from " + track.directory);
+                    } else {
+                        logDebug("Skipping incomplete track data");
+                    }
+                } else {
+                    logDebug("Received non-track message, continuing...");
+                }
                 
             } catch (const std::exception& e) {
                 logDebug("WebSocket read error: " + std::string(e.what()));
