@@ -119,6 +119,10 @@ HRESULT VDJ_API CAMP::GetFolderContextMenu(const char *folderUniqueId, IVdjConte
         contextMenu->add(("Search Results: 50" + string(currentLimit == 50 ? checkmark : "")).c_str());
         contextMenu->add(("Search Results: 100" + string(currentLimit == 100 ? checkmark : "")).c_str());
         contextMenu->add(("Search Results: 200" + string(currentLimit == 200 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 300" + string(currentLimit == 300 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 400" + string(currentLimit == 400 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 500" + string(currentLimit == 500 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 1000" + string(currentLimit == 1000 ? checkmark : "")).c_str());
     
     logDebug("GetFolderContextMenu completed");
     return S_OK;
@@ -136,6 +140,10 @@ HRESULT VDJ_API CAMP::OnFolderContextMenu(const char *folderUniqueId, size_t men
             case 1: newLimit = 50; break;
             case 2: newLimit = 100; break;
             case 3: newLimit = 200; break;
+            case 4: newLimit = 300; break;
+            case 5: newLimit = 400; break;
+            case 6: newLimit = 500; break;
+            case 7: newLimit = 600; break;
             default: 
                 logDebug("Unknown menu index: " + to_string(menuIndex));
                 return S_OK;
