@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <sstream>
 
 #ifdef VDJ_WIN
 #include <windows.h>
@@ -519,4 +520,87 @@ std::string CAMP::urlEncode(const std::string& value)
     }
     
     return encoded;
+}
+
+// Search result limit configuration functions
+int CAMP::getSearchResultLimit()
+{
+    if (searchResultLimit <= 0) {
+        searchResultLimit = getStoredSearchResultLimit();
+    }
+    return searchResultLimit;
+}
+
+void CAMP::setSearchResultLimit(int limit)
+{
+    if (limit > 0 && limit <= 1000) { // Reasonable bounds
+        searchResultLimit = limit;
+        storeSearchResultLimit(limit);
+    }
+}
+
+int CAMP::getStoredSearchResultLimit()
+{
+    logDebug("getStoredSearchResultLimit called");
+    std::string settingsPath;
+    
+#ifdef VDJ_WIN
+    char* userProfile = getenv("USERPROFILE");
+    if (userProfile) {
+        settingsPath = std::string(userProfile) + "\\AppData\\Local\\VirtualDJ\\.camp_search_limit";
+    }
+#else
+    char* homeDir = getenv("HOME");
+    if (homeDir) {
+        settingsPath = std::string(homeDir) + "/Library/Application Support/VirtualDJ/.camp_search_limit";
+    }
+#endif
+    
+    if (settingsPath.empty()) {
+        logDebug("getStoredSearchResultLimit: Could not determine settings storage path");
+        return 50; // Default
+    }
+    
+    std::ifstream settingsFile(settingsPath);
+    if (settingsFile.is_open()) {
+        std::string limitStr;
+        getline(settingsFile, limitStr);
+        settingsFile.close();
+        
+        int limit = std::stoi(limitStr);
+        if (limit > 0 && limit <= 1000) {
+            logDebug("getStoredSearchResultLimit: Retrieved limit from storage: " + std::to_string(limit));
+            return limit;
+        }
+    }
+    
+    logDebug("getStoredSearchResultLimit: Using default limit: 50");
+    return 50; // Default
+}
+
+void CAMP::storeSearchResultLimit(int limit)
+{
+    logDebug("storeSearchResultLimit called with limit: " + std::to_string(limit));
+    std::string settingsPath;
+    
+#ifdef VDJ_WIN
+    char* userProfile = getenv("USERPROFILE");
+    if (userProfile) {
+        settingsPath = std::string(userProfile) + "\\AppData\\Local\\VirtualDJ\\.camp_search_limit";
+    }
+#else
+    char* homeDir = getenv("HOME");
+    if (homeDir) {
+        settingsPath = std::string(homeDir) + "/Library/Application Support/VirtualDJ/.camp_search_limit";
+    }
+#endif
+    
+    if (!settingsPath.empty()) {
+        std::ofstream settingsFile(settingsPath);
+        if (settingsFile.is_open()) {
+            settingsFile << std::to_string(limit);
+            settingsFile.close();
+            logDebug("storeSearchResultLimit: Limit stored successfully");
+        }
+    }
 }

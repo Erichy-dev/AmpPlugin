@@ -74,7 +74,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         // Read streaming results
         beast::flat_buffer buffer;
         std::vector<TrackInfo> allResults;
-        const size_t MAX_RESULTS = 50;
+        const size_t MAX_RESULTS = plugin->getSearchResultLimit();
         
         while (true) {
             try {

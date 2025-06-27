@@ -79,9 +79,16 @@ private:
     void storeApiKey(const std::string& apiKey);
     void clearApiKey();
     
+    // Search result limit configuration
+    int getSearchResultLimit();
+    void setSearchResultLimit(int limit);
+    int getStoredSearchResultLimit();
+    void storeSearchResultLimit(int limit);
+    
     std::vector<TrackInfo> cachedTracks;
     bool tracksCached = false;
     std::string apiKey;
+    int searchResultLimit = 50; // Default to 50 results
 };
 
 #endif

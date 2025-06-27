@@ -63,7 +63,8 @@ HRESULT VDJ_API CAMP::GetStreamUrl(const char* uniqueId, IVdjString& url, IVdjSt
 
 HRESULT VDJ_API CAMP::GetFolderList(IVdjSubfoldersList* subfoldersList)
 {
-    return ::getFolderList(this, subfoldersList);
+    // return ::getFolderList(this, subfoldersList);
+    return S_OK;
 }
 
 HRESULT VDJ_API CAMP::GetFolder(const char* folderUniqueId, IVdjTracksList* tracksList)
@@ -110,7 +111,15 @@ HRESULT VDJ_API CAMP::GetFolderContextMenu(const char *folderUniqueId, IVdjConte
 {
     string folderId = folderUniqueId ? folderUniqueId : "(null)";
     logDebug("GetFolderContextMenu called with folderUniqueId: '" + folderId + "'");
-    contextMenu->add("GetFolderContextMenu");
+    
+        int currentLimit = getSearchResultLimit();
+        
+        string checkmark = " ✓";
+        contextMenu->add(("Search Results: 25" + string(currentLimit == 25 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 50" + string(currentLimit == 50 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 100" + string(currentLimit == 100 ? checkmark : "")).c_str());
+        contextMenu->add(("Search Results: 200" + string(currentLimit == 200 ? checkmark : "")).c_str());
+    
     logDebug("GetFolderContextMenu completed");
     return S_OK;
 }
@@ -119,6 +128,22 @@ HRESULT VDJ_API CAMP::OnFolderContextMenu(const char *folderUniqueId, size_t men
 {
     string folderId = folderUniqueId ? folderUniqueId : "(null)";
     logDebug("OnFolderContextMenu called with folderUniqueId: '" + folderId + "', menuIndex: " + to_string(menuIndex));
+    
+        int newLimit = 50; // Default
+        
+        switch (menuIndex) {
+            case 0: newLimit = 25; break;
+            case 1: newLimit = 50; break;
+            case 2: newLimit = 100; break;
+            case 3: newLimit = 200; break;
+            default: 
+                logDebug("Unknown menu index: " + to_string(menuIndex));
+                return S_OK;
+        }
+        
+        setSearchResultLimit(newLimit);
+        logDebug("Search result limit set to: " + to_string(newLimit));
+    
     logDebug("OnFolderContextMenu completed");
     return S_OK;
 }
