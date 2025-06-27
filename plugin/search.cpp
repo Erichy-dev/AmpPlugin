@@ -74,33 +74,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         // Read streaming results
         beast::flat_buffer buffer;
         std::vector<TrackInfo> allResults;
-        std::vector<TrackInfo> batch;
-        const size_t BATCH_SIZE = 25;
-
-        auto addBatchToVdj = [&](const std::vector<TrackInfo>& tracksToAdd) {
-            logDebug("Adding batch of " + std::to_string(tracksToAdd.size()) + " tracks to VirtualDJ.");
-            for (const auto& track : tracksToAdd) {
-                std::string artist = track.directory;
-                if (artist.empty() || artist == "/") {
-                    artist = "Unknown Artist";
-                }
-
-                const char* streamUrl = nullptr;
-                std::string localPath;
-                if (plugin->isTrackCached(track.uniqueId.c_str())) {
-                    localPath = plugin->getEncodedLocalPathForTrack(track.uniqueId.c_str());
-                    streamUrl = localPath.c_str();
-                }
-
-                bool isVideo = track.name.find(".mp4") != std::string::npos;
-
-                tracks->add(
-                    track.uniqueId.c_str(), track.name.c_str(), artist.c_str(),
-                    "", nullptr, "Music Pool", "", "", streamUrl,
-                    0, 0, 0, 0, isVideo, false
-                );
-            }
-        };
+        const size_t MAX_RESULTS = 50;
         
         while (true) {
             try {
@@ -162,12 +136,34 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
                     // Only add track if we have essential fields
                     if (!track.name.empty() && !track.uniqueId.empty() && !track.url.empty()) {
                         allResults.push_back(track);
-                        batch.push_back(track);
-                        logDebug("Batched track: " + track.name);
+                        
+                        // Add track to VirtualDJ immediately
+                        std::string artist = track.directory;
+                        if (artist.empty() || artist == "/") {
+                            artist = "Unknown Artist";
+                        }
 
-                        if (batch.size() >= BATCH_SIZE) {
-                            addBatchToVdj(batch);
-                            batch.clear();
+                        const char* streamUrl = nullptr;
+                        std::string localPath;
+                        if (plugin->isTrackCached(track.uniqueId.c_str())) {
+                            localPath = plugin->getEncodedLocalPathForTrack(track.uniqueId.c_str());
+                            streamUrl = localPath.c_str();
+                        }
+
+                        bool isVideo = track.name.find(".mp4") != std::string::npos;
+
+                        tracks->add(
+                            track.uniqueId.c_str(), track.name.c_str(), artist.c_str(),
+                            "", nullptr, "Music Pool", "", "", streamUrl,
+                            0, 0, 0, 0, isVideo, false
+                        );
+                        
+                        logDebug("Added track: " + track.name + " (Total: " + std::to_string(allResults.size()) + "/" + std::to_string(MAX_RESULTS) + ")");
+
+                        // Check if we've reached our limit
+                        if (allResults.size() >= MAX_RESULTS) {
+                            logDebug("Reached maximum results limit (" + std::to_string(MAX_RESULTS) + "), stopping search");
+                            break;
                         }
                     } else {
                         logDebug("Skipping incomplete track data");
@@ -182,16 +178,10 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
             }
         }
 
-        // Add any remaining tracks in the last batch
-        if (!batch.empty()) {
-            addBatchToVdj(batch);
-            batch.clear();
-        }
-
         // Close connection
         ws.close(websocket::close_code::normal);
         
-        logDebug("WebSocket connection closed. Total results: " + std::to_string(allResults.size()));
+        logDebug("WebSocket connection closed. Returning " + std::to_string(allResults.size()) + " results");
         logDebug("OnSearch completed with " + std::to_string(allResults.size()) + " results");
         return S_OK;
 
