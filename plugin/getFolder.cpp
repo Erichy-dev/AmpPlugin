@@ -117,10 +117,10 @@ HRESULT getFolder(CAMP* plugin, const char* folderUniqueId, IVdjTracksList* trac
             tracksList->add(
                 cleanPath.c_str(),        // uniqueId (cleanPath)
                 fileName.c_str(),         // title (fileName)
-                folderId.c_str(),         // artist (field name)
+                "",         // artist (field name)
                 "",                       // remix
                 nullptr,                  // genre
-                "Music Pool",             // label
+                "",             // label
                 "",          // comment
                 "",                       // cover URL
                 streamUrl,                // streamUrl

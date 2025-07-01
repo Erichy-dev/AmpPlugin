@@ -140,7 +140,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
                         // Add track to VirtualDJ immediately
                         std::string artist = track.directory;
                         if (artist.empty() || artist == "/") {
-                            artist = "Unknown Artist";
+                            artist = "";
                         }
 
                         const char* streamUrl = nullptr;
