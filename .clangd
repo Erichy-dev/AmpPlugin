@@ -1,2 +1,4 @@
 CompileFlags:
-  Add: -I/usr/local/include
+  Add:
+    - -I/usr/local/include
+    - -I/usr/local/opt/boost/include
