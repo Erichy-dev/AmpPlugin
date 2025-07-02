@@ -42,7 +42,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
     std::string encodedSearch = plugin->urlEncode(searchTerm);
     std::string host = "music.abelldjcompany.com";
     std::string port = "443";
-    std::string path = "/ws/search?apiKey=amp-1750760187709-i2roomisf";
+    std::string path = "/ws/search?apiKey="+plugin->apiKey;
 
     logDebug("Performing WebSocket search with host: " + host + ", path: " + path);
 
