@@ -45,7 +45,7 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
         std::string id = uniqueId;
         if (!id.empty() && id != "fallback") {
             std::string encodedPath = urlEncode(id);
-            downloadUrl = "https://music.abelldjcompany.com/audio/" + encodedPath;
+            downloadUrl = "https://tracks.abelldjcompany.com/audio/" + encodedPath;
         }
     }
 

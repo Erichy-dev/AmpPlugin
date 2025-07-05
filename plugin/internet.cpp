@@ -84,7 +84,7 @@ std::vector<TrackInfo> CAMP::parseTracksFromJson(const std::string& jsonString)
         testTrack.uniqueId = "parse_error";
         testTrack.name = "Please subscribe to AMP";
         testTrack.directory = "Error";
-        testTrack.url = "https://music.abelldjcompany.com/audio/test.mp3";
+        testTrack.url = "https://tracks.abelldjcompany.com/audio/test.mp3";
         testTrack.size = 0;
         tracks.push_back(testTrack);
         logDebug("parseTracksFromJson: Returning error track");
@@ -98,7 +98,7 @@ std::vector<TrackInfo> CAMP::parseTracksFromJson(const std::string& jsonString)
         testTrack.uniqueId = "parse_error2";
         testTrack.name = "Please subscribe to AMP";
         testTrack.directory = "Error";
-        testTrack.url = "https://music.abelldjcompany.com/audio/test.mp3";
+        testTrack.url = "https://tracks.abelldjcompany.com/audio/test.mp3";
         testTrack.size = 0;
         tracks.push_back(testTrack);
         logDebug("parseTracksFromJson: Returning array error track");

@@ -40,7 +40,7 @@ HRESULT getStreamUrl(CAMP* plugin, const char* uniqueId, IVdjString& url, IVdjSt
     // If not found in cache or memory, construct URL directly as a fallback with proper URL encoding
     if (!id.empty() && id != "fallback") {
         std::string encodedPath = plugin->urlEncode(id);
-        std::string streamUrl = "https://music.abelldjcompany.com/audio/" + encodedPath;
+        std::string streamUrl = "https://tracks.abelldjcompany.com/audio/" + encodedPath;
         logDebug("Constructed fallback stream URL: " + streamUrl);
         url = streamUrl.c_str();
         return S_OK;

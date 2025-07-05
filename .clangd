@@ -1,5 +1,0 @@
-CompileFlags:
-  Add:
-    - -I/usr/local/include
-    - -I/usr/local/opt/boost/include
-    - -I/opt/homebrew/opt/boost/include
