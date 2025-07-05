@@ -39,7 +39,7 @@ target_include_directories(AMP PRIVATE
 # Link frameworks and libraries
 target_link_libraries(AMP PRIVATE
     "-framework CoreFoundation"
-    ${Boost_LIBRARIES}
+    
     OpenSSL::SSL
     OpenSSL::Crypto
 )

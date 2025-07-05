@@ -77,9 +77,7 @@ std::vector<TrackInfo> CAMP::parseTracksFromJson(const std::string& jsonString)
     
 
     // Parse new API format - look for "tracks" array
-    logDebug("parseTracksFromJson: Looking for 'tracks' array in JSON");
-    size_t tracksPos = jsonString.find("\"tracks\"");
-    if (tracksPos == std::string::npos) {
+    logDebug("parseTracksFromJson: Looking for 'results' array in JSON");    size_t tracksPos = jsonString.find("\"results\"");    if (tracksPos == std::string::npos) {
         // If we can't find "tracks", create a test track to show parsing failed
         logDebug("parseTracksFromJson: 'tracks' not found in JSON, creating error track");
         TrackInfo testTrack;
@@ -153,14 +151,12 @@ std::vector<TrackInfo> CAMP::parseTracksFromJson(const std::string& jsonString)
             }
         }
         
-        // Extract fieldName as directory
-        size_t fieldStart = trackObj.find("\"fieldName\":");
-        if (fieldStart != std::string::npos) {
-            fieldStart = trackObj.find('"', fieldStart + 12) + 1;
-            size_t fieldEnd = trackObj.find('"', fieldStart);
-            if (fieldEnd != std::string::npos) {
-                track.directory = trackObj.substr(fieldStart, fieldEnd - fieldStart);
-            }
+        // Extract directory from cleanPath
+        size_t lastSlash = track.uniqueId.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            track.directory = track.uniqueId.substr(0, lastSlash);
+        } else {
+            track.directory = "Unknown"; // Default if no slash found
         }
         
         // Extract fullUrl
