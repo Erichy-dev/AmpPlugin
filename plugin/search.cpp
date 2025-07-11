@@ -33,10 +33,10 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
     logDebug("Parsed " + std::to_string(tracksFound.size()) + " tracks from JSON response.");
 
     for (const auto& track : tracksFound) {
-        std::string artist = track.directory;
-        if (artist.empty() || artist == "/") {
-            artist = "";
-        }
+        // Parse title and artist from track name
+        auto titleArtistPair = parseTrackTitleAndArtist(track.name);
+        std::string title = titleArtistPair.first;
+        std::string artist = titleArtistPair.second;
 
         const char* streamUrl = nullptr;
         std::string localPath;
@@ -48,11 +48,23 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         bool isVideo = track.name.find(".mp4") != std::string::npos;
 
         tracks->add(
-            track.uniqueId.c_str(), track.name.c_str(), artist.c_str(),
-            "", nullptr, "Music Pool", "", "", streamUrl,
-            0, 0, 0, 0, isVideo, false
+            track.uniqueId.c_str(), 
+            title.c_str(), // title
+            artist.c_str(), // artist
+            "AMP", // remix
+            nullptr, // genre
+            "AMP", // label
+            "AbellDj Music Pool", // comment
+            "", // coverUrl
+            streamUrl, // sream url
+            0, // length
+            0, // bpm
+            0, // key
+            0, // year
+            isVideo, 
+            false
         );
-        logDebug("Added track: " + track.name);
+        logDebug("Added track: " + track.name + " -> Title: " + title + ", Artist: " + artist);
     }
     logDebug("OnSearch completed with " + std::to_string(tracksFound.size()) + " results.");
     return S_OK;
