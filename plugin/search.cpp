@@ -51,7 +51,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
             track.uniqueId.c_str(), 
             title.c_str(), // title
             artist.c_str(), // artist
-            "AMP", // remix
+            "amp", // remix
             nullptr, // genre
             "AMP", // label
             "AbellDj Music Pool", // comment
