@@ -7,16 +7,6 @@
 HRESULT getFolderList(CAMP* plugin, IVdjSubfoldersList* subfoldersList) {
     logDebug("GetFolderList called");
 
-    // Fetch fields/folders from new API endpoint
-    if (plugin->apiKey.empty()) {
-        plugin->apiKey = plugin->getStoredApiKey();
-    }
-
-    if (plugin->apiKey.empty()) {
-        logDebug("User not logged in - no API key available. Please log in first.");
-        return S_OK;
-    }
-
     logDebug("Fetching fields from API");
     std::string jsonResponse = plugin->httpGetWithAuth("https://music.abelldjcompany.com/api/fields-db");
     if (jsonResponse.empty()) {

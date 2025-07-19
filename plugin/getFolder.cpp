@@ -8,15 +8,7 @@ HRESULT getFolder(CAMP* plugin, const char* folderUniqueId, IVdjTracksList* trac
     std::string folderId = folderUniqueId ? folderUniqueId : "(null)";
     logDebug("GetFolder called with folderUniqueId: '" + folderId + "'");
     
-    if (plugin->apiKey.empty()) {
-        plugin->apiKey = plugin->getStoredApiKey();
-    }
     
-    if (plugin->apiKey.empty()) {
-        logDebug("User not logged in - no API key available. Please log in first.");
-        return S_OK;
-    }
-
     // Fetch tracks for specific field from new API endpoint
     std::string encodedFolderId = plugin->urlEncode(folderId);
     std::string apiUrl = "https://music.abelldjcompany.com/api/fields/" + encodedFolderId + "/tracks";

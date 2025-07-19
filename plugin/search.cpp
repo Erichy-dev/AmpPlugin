@@ -14,14 +14,6 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
         return S_OK;
     }
 
-    if (plugin->apiKey.empty()) {
-        plugin->apiKey = plugin->getStoredApiKey();
-    }
-    if (plugin->apiKey.empty()) {
-        logDebug("User not logged in - no API key available for search.");
-        return S_OK;
-    }
-
     std::string encodedSearch = plugin->urlEncode(searchTerm);
     std::string searchUrl = "https://music.abelldjcompany.com/api/tracks?search=" + encodedSearch + "&limit=" + std::to_string(plugin->getSearchResultLimit());
     logDebug("Performing HTTP GET search with URL: " + searchUrl);

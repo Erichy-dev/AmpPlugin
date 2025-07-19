@@ -60,10 +60,9 @@ void CAMP::downloadTrackToCache(const char* uniqueId)
 
         // Copy variables to pass to the thread
         std::string uniqueIdStr = uniqueId;
-        std::string apiKeyCopy = this->apiKey;
 
-        std::thread([this, downloadUrl, filePath, apiKeyCopy, uniqueIdStr]() {
-            if (downloadFile(downloadUrl, filePath, apiKeyCopy)) {
+        std::thread([this, downloadUrl, filePath, uniqueIdStr]() {
+            if (downloadFile(downloadUrl, filePath)) {
                 logDebug("Background download successful for uniqueId: " + uniqueIdStr);
                 cb->SendCommand("browsed_file_color \"#00FF00\"");
             } else {
@@ -205,16 +204,6 @@ void CAMP::ensureTracksAreCached()
     }
 
     logDebug("No cached tracks available, fetching from backend");
-
-    // Check if user is logged in first
-    if (apiKey.empty()) {
-        apiKey = getStoredApiKey();
-    }
-    
-    if (apiKey.empty()) {
-        logDebug("User not logged in - no API key available. Please log in first.");
-        return;
-    }
 
     // Fetch tracks from backend using new API
     logDebug("Fetching tracks from backend with authentication");
