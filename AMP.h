@@ -69,15 +69,9 @@ private:
     std::string httpGet(const std::string& url);
     std::string httpGetWithAuth(const std::string& url);
     void httpPost(const std::string& url, const std::string& postData);
-    bool downloadFile(const std::string& url, const std::string& filePath, const std::string& apiKey);
+    bool downloadFile(const std::string& url, const std::string& filePath);
     std::vector<TrackInfo> parseTracksFromJson(const std::string& jsonString);
     std::string urlEncode(const std::string& value);
-    
-    // Authentication
-    bool validateApiKey(const std::string& apiKey);
-    std::string getStoredApiKey();
-    void storeApiKey(const std::string& apiKey);
-    void clearApiKey();
     
     // Search result limit configuration
     int getSearchResultLimit();
@@ -87,7 +81,6 @@ private:
     
     std::vector<TrackInfo> cachedTracks;
     bool tracksCached = false;
-    std::string apiKey;
     int searchResultLimit = 50; // Default to 50 results
 };
 

@@ -182,76 +182,13 @@ std::vector<TrackInfo> CAMP::parseTracksFromJson(const std::string& jsonString)
     return tracks;
 }
 
-// Authentication helper methods
-std::string CAMP::httpGetWithAuth(const std::string& url)
-{
-    logDebug("httpGetWithAuth called with URL: " + url);
-    
-    if (apiKey.empty()) {
-        apiKey = getStoredApiKey();
-    }
-    
-    if (apiKey.empty()) {
-        logDebug("httpGetWithAuth: No API key available");
-        return "";
-    }
-    
-    std::string response;
-    
-#ifdef VDJ_WIN
-    logDebug("httpGetWithAuth: Using Windows WinINet with API key");
-    HINTERNET hInternet = InternetOpenA("VDJ Plugin", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-    if (hInternet) {
-        HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD, 0);
-        if (hUrl) {
-            // Add API key header
-            std::string header = "x-api-key: " + apiKey;
-            HttpAddRequestHeadersA(hUrl, header.c_str(), header.length(), HTTP_ADDREQ_FLAG_ADD);
-            
-            char buffer[4096];
-            DWORD bytesRead;
-            while (InternetReadFile(hUrl, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead > 0) {
-                buffer[bytesRead] = '\0';
-                response += buffer;
-            }
-            InternetCloseHandle(hUrl);
-        }
-        InternetCloseHandle(hInternet);
-    }
-#elif defined(VDJ_MAC)
-    logDebug("httpGetWithAuth: Using macOS curl with API key");
-    std::string command = "curl --location -s --header \"x-api-key: " + apiKey + "\" \"" + url + "\"";
-    logDebug("httpGetWithAuth: Executing command: " + command);
-    FILE* pipe = popen(command.c_str(), "r");
-    if (pipe) {
-        char buffer[4096];
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            response += buffer;
-        }
-        pclose(pipe);
-    }
-#endif
-    
-    logDebug("httpGetWithAuth completed, response length: " + std::to_string(response.length()));
-    return response;
-}
-
 void CAMP::httpPost(const std::string& url, const std::string& postData)
 {
     logDebug("httpPost called with URL: " + url + " and data: " + postData);
 
-    if (apiKey.empty()) {
-        apiKey = getStoredApiKey();
-    }
-    
-    if (apiKey.empty()) {
-        logDebug("httpPost: No API key available");
-        return;
-    }
-
 #ifdef VDJ_MAC
     // Using curl for POST request on macOS
-    std::string command = "curl -s -X POST -H \"Content-Type: application/json\" -H \"x-api-key: " + apiKey + "\" -d '" + postData + "' \"" + url + "\"";
+    std::string command = "curl -s -X POST -H \"Content-Type: application/json\" -d '" + postData + "' \"" + url + "\"";
     
     FILE* pipe = popen(command.c_str(), "r");
     if (!pipe) {
@@ -308,7 +245,7 @@ void CAMP::httpPost(const std::string& url, const std::string& postData)
         return;
     }
 
-    std::string headers = "Content-Type: application/json\r\nx-api-key: " + apiKey;
+    std::string headers = "Content-Type: application/json";
     if (!HttpSendRequestA(hRequest, headers.c_str(), headers.length(), (LPVOID)postData.c_str(), postData.length())) {
          DWORD dwError = GetLastError();
         logDebug("httpPost: HttpSendRequestA failed. Error: " + std::to_string(dwError));
@@ -320,122 +257,7 @@ void CAMP::httpPost(const std::string& url, const std::string& postData)
 #endif
 }
 
-bool CAMP::validateApiKey(const std::string& key)
-{
-    logDebug("validateApiKey called");
-    if (key.empty()) return false;
-    
-    // Test the API key by making a request to the fields endpoint
-    std::string testUrl = "https://music.abelldjcompany.com/api/fields-db";
-    
-#ifdef VDJ_MAC
-    std::string command = "curl --location -s --header \"x-api-key: " + key + "\" \"" + testUrl + "\"";
-    FILE* pipe = popen(command.c_str(), "r");
-    if (pipe) {
-        char buffer[256];
-        std::string response;
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            response += buffer;
-        }
-        pclose(pipe);
-        
-        // If we get a valid JSON response with fields, the key works
-        bool valid = response.find("\"fields\"") != std::string::npos;
-        logDebug("validateApiKey result: " + std::string(valid ? "valid" : "invalid"));
-        return valid;
-    }
-#endif
-    
-    return false; // Default to invalid if we can't test
-}
-
-std::string CAMP::getStoredApiKey()
-{
-    logDebug("getStoredApiKey called");
-    // Simple file-based storage for now
-    std::string keyPath;
-    
-#ifdef VDJ_WIN
-    char* userProfile = getenv("USERPROFILE");
-    if (userProfile) {
-        keyPath = std::string(userProfile) + "\\AppData\\Local\\VirtualDJ\\.camp_session_cache";
-    }
-#else
-    char* homeDir = getenv("HOME");
-    if (homeDir) {
-        keyPath = std::string(homeDir) + "/Library/Application Support/VirtualDJ/.camp_session_cache";
-    }
-#endif
-    
-    if (keyPath.empty()) {
-        logDebug("getStoredApiKey: Could not determine key storage path");
-        return "";
-    }
-    
-    std::ifstream keyFile(keyPath);
-    if (keyFile.is_open()) {
-        std::string key;
-        getline(keyFile, key);
-        keyFile.close();
-        logDebug("getStoredApiKey: Retrieved API key from storage");
-        return key;
-    }
-    
-    logDebug("getStoredApiKey: No stored API key found");
-    return "";
-}
-
-void CAMP::storeApiKey(const std::string& key)
-{
-    logDebug("storeApiKey called");
-    std::string keyPath;
-    
-#ifdef VDJ_WIN
-    char* userProfile = getenv("USERPROFILE");
-    if (userProfile) {
-        keyPath = std::string(userProfile) + "\\AppData\\Local\\VirtualDJ\\.camp_session_cache";
-    }
-#else
-    char* homeDir = getenv("HOME");
-    if (homeDir) {
-        keyPath = std::string(homeDir) + "/Library/Application Support/VirtualDJ/.camp_session_cache";
-    }
-#endif
-    
-    if (!keyPath.empty()) {
-        std::ofstream keyFile(keyPath);
-        if (keyFile.is_open()) {
-            keyFile << key;
-            keyFile.close();
-            logDebug("storeApiKey: API key stored successfully");
-        }
-    }
-}
-
-void CAMP::clearApiKey()
-{
-    logDebug("clearApiKey called");
-    std::string keyPath;
-    
-#ifdef VDJ_WIN
-    char* userProfile = getenv("USERPROFILE");
-    if (userProfile) {
-        keyPath = std::string(userProfile) + "\\AppData\\Local\\VirtualDJ\\.camp_session_cache";
-    }
-#else
-    char* homeDir = getenv("HOME");
-    if (homeDir) {
-        keyPath = std::string(homeDir) + "/Library/Application Support/VirtualDJ/.camp_session_cache";
-    }
-#endif
-    
-    if (!keyPath.empty()) {
-        remove(keyPath.c_str());
-        logDebug("clearApiKey: API key file removed");
-    }
-}
-
-bool CAMP::downloadFile(const std::string& url, const std::string& filePath, const std::string& apiKey)
+bool CAMP::downloadFile(const std::string& url, const std::string& filePath)
 {
     logDebug("downloadFile called. URL: " + url + ", Path: " + filePath);
 
@@ -460,11 +282,6 @@ bool CAMP::downloadFile(const std::string& url, const std::string& filePath, con
         outFile.close();
         return false;
     }
-
-    if (!apiKey.empty()) {
-        std::string header = "x-api-key: " + apiKey;
-        HttpAddRequestHeadersA(hUrl, header.c_str(), header.length(), HTTP_ADDREQ_FLAG_ADD);
-    }
     
     char buffer[4096];
     DWORD bytesRead;
@@ -479,7 +296,7 @@ bool CAMP::downloadFile(const std::string& url, const std::string& filePath, con
     logDebug("downloadFile: File downloaded successfully to: " + filePath);
     return true;
 #elif defined(VDJ_MAC)
-    std::string command = "curl --location -s --header \"x-api-key: " + apiKey + "\" -o \"" + filePath + "\" \"" + url + "\"";
+    std::string command = "curl --location -s -o \"" + filePath + "\" \"" + url + "\"";
     
     int result = system(command.c_str());
     

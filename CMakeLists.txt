@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Find required packages
 find_package(OpenSSL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system)
 
 # Create bundle (MODULE creates .bundle, not .dylib)
 add_library(AMP MODULE 
@@ -32,7 +31,6 @@ set_target_properties(AMP PROPERTIES
 
 # Include directories
 target_include_directories(AMP PRIVATE
-    ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
 )
 
