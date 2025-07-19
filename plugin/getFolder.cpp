@@ -13,7 +13,7 @@ HRESULT getFolder(CAMP* plugin, const char* folderUniqueId, IVdjTracksList* trac
     std::string encodedFolderId = plugin->urlEncode(folderId);
     std::string apiUrl = "https://music.abelldjcompany.com/api/fields/" + encodedFolderId + "/tracks";
     logDebug("Fetching tracks from: " + apiUrl);
-    std::string jsonResponse = plugin->httpGetWithAuth(apiUrl);
+    std::string jsonResponse = plugin->httpGet(apiUrl);
     if (jsonResponse.empty()) {
         logDebug("Empty JSON response from field tracks API");
         return S_OK;

@@ -4,8 +4,6 @@
 #include <string>
 #include <cstring>
 
-
-
 HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
     logDebug("OnSearch called with search term: " + std::string(searchTerm ? searchTerm : "(null)"));
 
@@ -18,7 +16,7 @@ HRESULT search(CAMP* plugin, const char* searchTerm, IVdjTracksList* tracks) {
     std::string searchUrl = "https://music.abelldjcompany.com/api/tracks?search=" + encodedSearch + "&limit=" + std::to_string(plugin->getSearchResultLimit());
     logDebug("Performing HTTP GET search with URL: " + searchUrl);
 
-    std::string jsonResponse = plugin->httpGetWithAuth(searchUrl);
+    std::string jsonResponse = plugin->httpGet(searchUrl);
     logDebug("Received HTTP response length: " + std::to_string(jsonResponse.length()));
 
     std::vector<TrackInfo> tracksFound = plugin->parseTracksFromJson(jsonResponse);

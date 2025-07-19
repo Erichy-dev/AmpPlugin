@@ -207,7 +207,7 @@ void CAMP::ensureTracksAreCached()
 
     // Fetch tracks from backend using new API
     logDebug("Fetching tracks from backend with authentication");
-    std::string jsonResponse = httpGetWithAuth("https://music.abelldjcompany.com/api/tracks");
+    std::string jsonResponse = httpGet("https://music.abelldjcompany.com/api/tracks");
     if (!jsonResponse.empty()) {
         logDebug("Received JSON response, parsing tracks");
         cachedTracks = parseTracksFromJson(jsonResponse);

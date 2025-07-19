@@ -8,7 +8,7 @@ HRESULT getFolderList(CAMP* plugin, IVdjSubfoldersList* subfoldersList) {
     logDebug("GetFolderList called");
 
     logDebug("Fetching fields from API");
-    std::string jsonResponse = plugin->httpGetWithAuth("https://music.abelldjcompany.com/api/fields-db");
+    std::string jsonResponse = plugin->httpGet("https://music.abelldjcompany.com/api/fields-db");
     if (jsonResponse.empty()) {
         logDebug("Empty JSON response from fields API");
         return S_OK;
