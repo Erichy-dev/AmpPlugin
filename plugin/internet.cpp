@@ -49,7 +49,7 @@ std::string CAMP::httpGet(const std::string& url)
 #elif defined(VDJ_MAC)
     // HTTP request using macOS system command
     logDebug("httpGet: Using macOS curl");
-    std::string command = "curl -s \"" + url + "\"";
+    std::string command = "curl -s -L \"" + url + "\"";
     logDebug("httpGet: Executing command: " + command);
     FILE* pipe = popen(command.c_str(), "r");
     if (pipe) {
@@ -188,7 +188,7 @@ void CAMP::httpPost(const std::string& url, const std::string& postData)
 
 #ifdef VDJ_MAC
     // Using curl for POST request on macOS
-    std::string command = "curl -s -X POST -H \"Content-Type: application/json\" -d '" + postData + "' \"" + url + "\"";
+    std::string command = "curl -s -L -X POST -H \"Content-Type: application/json\" -d '" + postData + "' \"" + url + "\"";
     
     FILE* pipe = popen(command.c_str(), "r");
     if (!pipe) {
