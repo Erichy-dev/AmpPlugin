@@ -14,6 +14,59 @@ SRC_DIR="AmpPlugin"
 # The final plugin bundle name
 PLUGIN_BUNDLE="AMP.bundle"
 
+# Function to check if Homebrew is installed
+check_brew() {
+    if command -v brew >/dev/null 2>&1; then
+        echo "==> Homebrew is already installed"
+        return 0
+    else
+        echo "==> Homebrew is not installed"
+        return 1
+    fi
+}
+
+# Function to install Homebrew
+install_brew() {
+    echo "==> Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Add Homebrew to PATH for Apple Silicon Macs
+    if [[ $(uname -m) == "arm64" ]]; then
+        echo "==> Adding Homebrew to PATH for Apple Silicon Mac"
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    else
+        echo "==> Adding Homebrew to PATH for Intel Mac"
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+}
+
+# Function to check if cmake is installed
+check_cmake() {
+    if command -v cmake >/dev/null 2>&1; then
+        echo "==> cmake is already installed"
+        return 0
+    else
+        echo "==> cmake is not installed"
+        return 1
+    fi
+}
+
+# Function to install cmake via Homebrew
+install_cmake() {
+    echo "==> Installing cmake via Homebrew..."
+    brew install cmake
+}
+
+# Check and install Homebrew if needed
+if ! check_brew; then
+    install_brew
+fi
+
+# Check and install cmake if needed
+if ! check_cmake; then
+    install_cmake
+fi
+
 # Create the plugin directories if they don't exist.
 echo "==> Ensuring plugin directories exist: $PLUGINS_DIR"
 mkdir -p "$PLUGINS_DIR"
