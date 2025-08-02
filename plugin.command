@@ -57,6 +57,40 @@ install_cmake() {
     brew install cmake
 }
 
+# Function to check if openssl@3 is installed
+check_openssl() {
+    if brew list openssl@3 >/dev/null 2>&1; then
+        echo "==> OpenSSL@3 is already installed"
+        return 0
+    else
+        echo "==> OpenSSL@3 is not installed"
+        return 1
+    fi
+}
+
+# Function to install openssl@3 via Homebrew
+install_openssl() {
+    echo "==> Installing OpenSSL@3 via Homebrew..."
+    brew install openssl@3
+}
+
+# Function to check if pkg-config is installed
+check_pkgconfig() {
+    if command -v pkg-config >/dev/null 2>&1; then
+        echo "==> pkg-config is already installed"
+        return 0
+    else
+        echo "==> pkg-config is not installed"
+        return 1
+    fi
+}
+
+# Function to install pkg-config via Homebrew
+install_pkgconfig() {
+    echo "==> Installing pkg-config via Homebrew..."
+    brew install pkg-config
+}
+
 # Check and install Homebrew if needed
 if ! check_brew; then
     install_brew
@@ -65,6 +99,16 @@ fi
 # Check and install cmake if needed
 if ! check_cmake; then
     install_cmake
+fi
+
+# Check and install openssl@3 if needed
+if ! check_openssl; then
+    install_openssl
+fi
+
+# Check and install pkg-config if needed
+if ! check_pkgconfig; then
+    install_pkgconfig
 fi
 
 # Create the plugin directories if they don't exist.
@@ -99,10 +143,16 @@ mkdir -p build
 cd build
 echo "==> Changed directory to $PWD"
 
-# Run CMake to configure the build.
+# Set OpenSSL environment variables for CMake
+echo "==> Setting OpenSSL environment variables..."
+export OPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3
+export OPENSSL_LIBRARIES=/opt/homebrew/opt/openssl@3/lib
+export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@3/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+# Run CMake to configure the build with OpenSSL paths specified.
 # It looks for the CMakeLists.txt in the parent directory.
-echo "==> Running CMake..."
-cmake ..
+echo "==> Running CMake with OpenSSL configuration..."
+cmake -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" -DOPENSSL_LIBRARIES="$OPENSSL_LIBRARIES" ..
 
 # Run Make to compile the plugin.
 # This will create the AMP.bundle.
